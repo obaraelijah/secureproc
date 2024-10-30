@@ -10,9 +10,9 @@ A secure job worker service that enables authorized users to run arbitrary Linux
 * Process namespace isolation
 
 ### Components
-**Library**: Core Go library for job management
-**API**: gRPC API for secure client-server communication
-**Client**: Command-line tool for interacting with the service
+* **Library**: Core Go library for job management
+* **API**: gRPC API for secure client-server communication
+* **Client**: Command-line tool for interacting with the service
 
 ### Requirements
 * Go 1.19 or higher
