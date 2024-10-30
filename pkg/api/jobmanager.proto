@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package jobmanager.v1;
+
+option go_package = "github.com/yourusername/secureproc/pkg/api";
+
+// The JobManager service models the API exposed by the JobManager.
+service JobManager {
+  // Starts a new job
+  rpc Start(JobCreationRequest) returns (Job) {}
+  
+  // Terminates a (potentially running) Job
+  rpc Stop(JobId) returns (NilMessage) {}
+  
+  // Queries the state of the given Job
+  rpc Query(JobId) returns (JobStatus) {}
+  
+  // List all jobs and their status
+  rpc List(NilMessage) returns (JobStatusList) {}
+  
+  // Streams the output of the running job to the client
+  rpc StreamOutput(StreamOutputRequest) returns (stream JobOutput) {}
+}
+
+// JobCreationRequest contains the parameters for creating a new job
+message JobCreationRequest {
+  // A client-specified name for the job
+  string name = 1;
+  // The path of the program to run
+  string program_path = 2;
+  // Arguments to pass to the program
+  repeated string arguments = 3;
+}
+
+// JobId uniquely identifies a job
+message JobId {
+  // A server-assigned UUIDv4 for the job
+  string id = 1;
+}
+
+// Job represents a running or completed job
+message Job {
+  // The server-assigned ID
+  JobId id = 1;
+  // The client-specified name for the job
+  string name = 2;
+}
+
+// JobStatus contains the current state of a job
+message JobStatus {
+  // The Job with which this status is associated
+  Job job = 1;
+  // The user who started the job
+  string owner = 2;
+  // Is the job running?
+  bool is_running = 3;
+  // The process ID of the job
+  int32 pid = 4;
+  // Signal number that terminated the job (if applicable)
+  int32 signal_number = 5;
+  // Exit code of the completed job
+  int32 exit_code = 6;
+  // Error message if job failed to start
+  string error_message = 7;
+}
+
+// JobOutput contains a chunk of output from the job
+message JobOutput {
+  // An array of bytes from the command output
+  bytes output = 1;
+}
+
+// JobStatusList contains a list of job statuses
+message JobStatusList {
+  repeated JobStatus job_status_list = 1;
+}
+
+// OutputStream specifies which output stream to read from
+enum OutputStream {
+  STREAM_UNSPECIFIED = 0;
+  STREAM_STDOUT = 1;
+  STREAM_STDERR = 2;
+}
+
+// StreamOutputRequest specifies which job and stream to read
+message StreamOutputRequest {
+  JobId job_id = 1;
+  OutputStream output_stream = 2;
+}
+
+// NilMessage is used when no parameters are needed
+message NilMessage {}
