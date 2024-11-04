@@ -1,6 +1,8 @@
 package command
 
 import (
+	"fmt"
+
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os"
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os/syscall"
 )
@@ -21,5 +23,41 @@ func Cgexec(args []string) error {
 // CgexecDetailed is wrapped by Cgexec and performs the same operation,
 // optionally with concrete os and syscall adapters.
 func CgexecDetailed(args []string, osa *os.Adapter, sa *syscall.Adapter) error {
-	//TODO: dfs
+	const DefaultPerms os.FileMode = 0644
+
+	var (
+		taskFileList []string
+		commandList  []string
+	)
+
+	for i := range args {
+		if args[i] == "--" {
+			taskFileList = args[1:i]
+			commandList = args[i+1:]
+			break
+		}
+	}
+
+	// If we never found --, treat all arguments as the command list
+	if len(taskFileList) == 0 && len(commandList) == 0 {
+		commandList = args[1:]
+	}
+
+	pid := fmt.Sprintf("%d", osa.Getpid())
+	for _, taskFile := range taskFileList {
+		if err := osa.WriteFileFn(taskFile, []byte(pid), DefaultPerms); err != nil {
+			return err
+		}
+	}
+
+	if len(commandList) == 0 {
+		return fmt.Errorf("cgexec: no command provided")
+	}
+
+	if err := sa.Exec(commandList[0], commandList, osa.Environ()); err != nil {
+		return err
+	}
+
+	// This should never happen
+	return fmt.Errorf("reached end of Cgexec unexpectedly")
 }
