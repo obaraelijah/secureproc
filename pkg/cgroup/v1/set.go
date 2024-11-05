@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/mattrobenolt/gocql/uuid"
+	"github.com/google/uuid"
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os"
 )
 
@@ -35,6 +35,7 @@ func NewSetDetailed(
 	jobId uuid.UUID,
 	controllers ...Controller,
 ) *Set {
+
 	return &Set{
 		osAdapter:   osAdapter,
 		basePath:    basePath,
