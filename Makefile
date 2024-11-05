@@ -1,39 +1,26 @@
-.PHONY: all client server test clean deps lint proto
+SHELL = bash
+MKDIR = mkdir
 
-# Build settings
-BINARY_DIR=bin
-CLIENT_BINARY=$(BINARY_DIR)/jobctl
-SERVER_BINARY=$(BINARY_DIR)/secureprocd
-GO=go
-GOFLAGS=-trimpath
-LDFLAGS=-s -w
+GOTEST := go test
+ifneq ($(shell which gotestsum),)
+	GOTEST := gotestsum --
+endif
 
-all: deps client server
+builddir:
+	@mkdir -p build
 
-$(BINARY_DIR):
-	mkdir -p $(BINARY_DIR)
-
-client: $(BINARY_DIR)
-	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(CLIENT_BINARY) ./cmd/jobctl
-
-server: $(BINARY_DIR)
-	$(GO) build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(SERVER_BINARY) ./cmd/secureprocd
-
-test:
-	$(GO) test -v ./...
+cgexec: CGO_ENABLED=0
+cgexec: GOOS=linux
+cgexec: GOARCH=amd64
+cgexec: BUILDFLAGS=-buildmode pie -tags 'osusergo netgo static_build'
+cgexec: builddir cmd/cgexec/cgexec.go
+	go build -o build/goexec cmd/cgexec/cgexec.go
+.PHONY: cgexec
 
 clean:
-	rm -rf $(BINARY_DIR)
-	$(GO) clean
+	$(RM) -r build
+.PHONY: clean
 
-deps:
-	$(GO) mod download
-	$(GO) mod tidy
-
-lint:
-	golangci-lint run
-
-proto:
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		pkg/api/jobmanager.proto
+test:
+	$(GOTEST) -v -race ./...
+.PHONY: test
