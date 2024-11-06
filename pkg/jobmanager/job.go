@@ -13,11 +13,22 @@ import (
 )
 
 type JobStatus struct {
+	Name      string
+	Id        string
 	Running   bool
 	Pid       int
 	ExitCode  int
 	SignalNum syscall.Signal
 	RunError  error
+}
+
+type Job interface {
+	Start() error
+	Stop() error
+	StdoutStream() *io.ByteStream
+	StderrStream() *io.ByteStream
+	Status() *JobStatus
+	Id() uuid.UUID
 }
 
 type job struct {
@@ -39,7 +50,7 @@ func NewJob(
 	cgControllers []cgroup.Controller,
 	programName string,
 	programArgs ...string,
-) *job {
+) Job {
 
 	return NewJobDetailed(
 		name,
@@ -58,7 +69,7 @@ func NewJobDetailed(
 	stderrBuffer io.OutputBuffer,
 	programName string,
 	programArgs ...string,
-) *job {
+) Job {
 
 	return &job{
 		id:            uuid.New(),
@@ -161,11 +172,13 @@ func (j *job) StderrStream() *io.ByteStream {
 	return io.NewByteStream(j.stderrBuffer)
 }
 
-func (j *job) Status() JobStatus {
+func (j *job) Status() *JobStatus {
 	j.mutex.Lock()
 	defer j.mutex.Unlock()
 
-	status := JobStatus{
+	status := &JobStatus{
+		Name:      j.name,
+		Id:        j.id.String(),
 		Running:   j.running,
 		Pid:       -1,
 		SignalNum: syscall.Signal(-1),
@@ -186,6 +199,10 @@ func (j *job) Status() JobStatus {
 	}
 
 	return status
+}
+
+func (j *job) Id() uuid.UUID {
+	return j.id
 }
 
 // lockedOperation is a simple runs the functor with the job lock held.
