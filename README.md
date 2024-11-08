@@ -6,8 +6,6 @@ A secure job worker service that enables authorized users to run arbitrary Linux
 * Process output streaming
 * Resource control via cgroups (CPU, Memory, Block I/O)
 * mTLS authentication and authorization
-* Multiple concurrent client support
-* Process namespace isolation
 
 ### Components
 * **Library**: Core Go library for job management
