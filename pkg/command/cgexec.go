@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os"
-	"github.com/obaraelijah/secureproc/pkg/adaptation/os/syscall"
+	"github.com/obaraelijah/secureproc/pkg/adaptation/syscall"
 )
 
 // Cgexec adds the current process to 0 or more specified cgroups, then
