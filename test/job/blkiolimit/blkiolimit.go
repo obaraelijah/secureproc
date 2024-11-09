@@ -9,7 +9,7 @@ import (
 
 func runTest(controllers ...cgroup.Controller) {
 
-	job := jobmanager.NewJob("my-test", controllers,
+	job := jobmanager.NewJob("theOwner", "my-test", controllers,
 		"/bin/dd",
 		"if=/dev/zero",
 		"of=/junk",
