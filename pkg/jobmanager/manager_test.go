@@ -5,7 +5,6 @@ import (
 
 	"github.com/obaraelijah/secureproc/pkg/jobmanager"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager/jobmanagertest"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,6 +21,20 @@ func Test_JobManager_Start(t *testing.T) {
 	assert.NotNil(t, job)
 }
 
+func Test_JobManager_DuplicateJobName_Error(t *testing.T) {
+	const userName1 = "user1"
+	const jobName = "user1-job"
+	const programPath = "/bin/true"
+
+	jm := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+
+	_, _ = jm.Start(userName1, jobName, programPath, nil)
+	job, err := jm.Start(userName1, jobName, programPath, nil)
+
+	assert.Error(t, err)
+	assert.Nil(t, job)
+}
+
 func Test_JobManager_Status_MatchingUser(t *testing.T) {
 	const userName1 = "user1"
 	const jobName = "user1-job"
@@ -35,6 +48,7 @@ func Test_JobManager_Status_MatchingUser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, true, status.Running)
 	assert.Equal(t, jobName, status.Name)
+	assert.Equal(t, userName1, status.Owner)
 }
 
 func Test_JobManager_Status_NonMatchingUser(t *testing.T) {
@@ -63,6 +77,7 @@ func Test_JobManager_Status_Superuser(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, true, status.Running)
 	assert.Equal(t, jobName, status.Name)
+	assert.Equal(t, userName1, status.Owner)
 }
 
 func Test_JobManager_Stop_MatchingUser(t *testing.T) {
