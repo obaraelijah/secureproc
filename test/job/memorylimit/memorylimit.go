@@ -10,8 +10,8 @@ import (
 
 func runTest(controllers ...cgroup.Controller) {
 
-	job := jobmanager.NewJob("my-test", controllers, "/usr/bin/stress-ng",
-		"--vm",
+	job := jobmanager.NewJob("theOwner", "my-test", controllers,
+		"/usr/bin/stress-ng",
 		fmt.Sprintf("%d", runtime.NumCPU()),
 		"--vm-bytes",
 		fmt.Sprintf("%d", 1024*1024*1024),

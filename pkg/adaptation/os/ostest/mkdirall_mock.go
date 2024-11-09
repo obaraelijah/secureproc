@@ -6,6 +6,7 @@ type MkdirAllRecord struct {
 	Path string
 	Perm os.FileMode
 }
+
 type MkdirAllMock struct {
 	Events    []*MkdirAllRecord
 	NextError error
