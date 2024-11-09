@@ -1,6 +1,7 @@
 SHELL = bash
-MKDIR = mkdir
+MKDIR = mkdir -p
 BUILDDIR = build
+COVERAGEDIR=$(BUILDDIR)/coverage
 EXECUTABLES  = $(BUILDDIR)/test-concurrentreads
 EXECUTABLES += $(BUILDDIR)/test-blkiolimit
 EXECUTABLES += $(BUILDDIR)/test-memorylimit
@@ -10,13 +11,12 @@ EXECUTABLES += $(BUILDDIR)/test-networknamespace
 
 GOTEST := go test
 ifneq ($(shell which gotestsum),)
-	GOTEST := gotestsum --
-endif
+	GOTEST := gotestsum -- endif
 
 all: $(BUILDDIR) $(BUILDDIR)/cgexec $(EXECUTABLES)
 
 $(BUILDDIR):
-	mkdir -p $(BUILDDIR)
+	$(MKDIR) $(BUILDDIR)
 
 $(BUILDDIR)/cgexec: CGO_ENABLED=0
 $(BUILDDIR)/cgexec: GOOS=linux
@@ -47,8 +47,13 @@ clean:
 	$(RM) -r $(BUILDDIR)
 .PHONY: clean
 
-test: vet
-	@$(GOTEST) -v -race ./...
+$(COVERAGEDIR):
+	$(MKDIR) -p $(COVERAGEDIR)
+
+test: vet $(COVERAGEDIR)
+	@$(GOTEST) -v -race -coverprofile=${COVERAGEDIR}/coverage.out -coverpkg=./... ./...
+	@go tool cover -func=${COVERAGEDIR}/coverage.out -o ${COVERAGEDIR}/function-coverage.txt
+	@go tool cover -html=${COVERAGEDIR}/coverage.out -o ${COVERAGEDIR}/coverage.html
 .PHONY: test
 
 vet: dep
@@ -58,4 +63,3 @@ vet: dep
 dep:
 	@go mod download
 .PHONY: dep
-#test/job/networknamespace/networknamespace.go
