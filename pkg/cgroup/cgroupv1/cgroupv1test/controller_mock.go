@@ -1,4 +1,4 @@
-package cgrouptest
+package cgroupv1test
 
 // ControllerMock provides a mock implementation of the v1.Controller interface
 // for use in unit test.  This implementation does not modify any actual

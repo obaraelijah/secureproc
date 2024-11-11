@@ -1,4 +1,4 @@
-package cgroup_test
+package cgroupv1_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os"
 	"github.com/obaraelijah/secureproc/pkg/adaptation/os/ostest"
-	"github.com/obaraelijah/secureproc/pkg/cgroup/v1"
+	"github.com/obaraelijah/secureproc/pkg/cgroup/cgroupv1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,10 +18,10 @@ func Test_memory_Apply(t *testing.T) {
 	}
 
 	limit := "500M"
-	mem := cgroup.NewMemoryControllerDetailed(adapter).SetLimit(limit)
+	mem := cgroupv1.NewMemoryControllerDetailed(adapter).SetLimit(limit)
 	mem.Apply(path)
 
 	assert.Equal(t, 1, len(writeRecorder.Events))
-	assert.Equal(t, fmt.Sprintf("%s/%s", path, cgroup.MemoryLimitInBytesFilename), writeRecorder.Events[0].Name)
+	assert.Equal(t, fmt.Sprintf("%s/%s", path, cgroupv1.MemoryLimitInBytesFilename), writeRecorder.Events[0].Name)
 	assert.Equal(t, []byte(limit), writeRecorder.Events[0].Data)
 }

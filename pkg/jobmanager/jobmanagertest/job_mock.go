@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/obaraelijah/secureproc/pkg/cgroup/v1"
+	"github.com/obaraelijah/secureproc/pkg/cgroup/cgroupv1"
 	"github.com/obaraelijah/secureproc/pkg/io"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager"
 )
@@ -23,7 +23,7 @@ type mockJob struct {
 func NewMockJob(
 	owner string,
 	jobName string,
-	controllers []cgroup.Controller,
+	controllers []cgroupv1.Controller,
 	programPath string,
 	arguments ...string,
 ) jobmanager.Job {
