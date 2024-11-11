@@ -17,7 +17,7 @@ import (
 type JobStatus struct {
 	Owner     string
 	Name      string
-	Id        string
+	ID        string
 	Running   bool
 	Pid       int
 	ExitCode  int
@@ -189,7 +189,7 @@ func (j *concreteJob) Status() *JobStatus {
 	status := &JobStatus{
 		Owner:     j.owner,
 		Name:      j.name,
-		Id:        j.id.String(),
+		ID:        j.id.String(),
 		Running:   j.running,
 		Pid:       -1,
 		SignalNum: syscall.Signal(-1),
@@ -204,7 +204,6 @@ func (j *concreteJob) Status() *JobStatus {
 	}
 
 	if state := j.cmd.ProcessState; state == nil {
-
 		if sys := state.Sys(); sys != nil {
 			if ws, ok := sys.(syscall.WaitStatus); ok {
 				status.SignalNum = ws.Signal()
@@ -216,8 +215,8 @@ func (j *concreteJob) Status() *JobStatus {
 	return status
 }
 
-// Id returns the server-assigned ID of this job.
-func (j *concreteJob) Id() uuid.UUID {
+// ID returns the server-assigned ID of this job.
+func (j *concreteJob) ID() uuid.UUID {
 	return j.id
 }
 
