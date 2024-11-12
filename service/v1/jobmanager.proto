@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+// The jobmanager.v1 package includes the API for the first major
+// version of the JobManager API.  This API can be extended with
+// non-breaking changes. If breaking changes are required, then
+// we can introduce new versions of the API alongside this one to
+// maintain backward compatibility.
+package jobmanager.v1;
