@@ -3,7 +3,6 @@ package serverv1
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/obaraelijah/secureproc/pkg/io"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager"
@@ -22,13 +21,19 @@ type jobmanagerServer struct {
 
 // NewJobmanagerServer creates and returns a jobmanagerServer.
 func NewJobmanagerServer() *jobmanagerServer {
+	return NewJobManagerServerDetailed(jobmanager.NewManager())
+}
+
+// NewJobManagerServerDetailed creates a new jobmanagerServer with a custom
+// underlying jobmanager.Manager.
+func NewJobManagerServerDetailed(manager *jobmanager.Manager) *jobmanagerServer {
 	return &jobmanagerServer{
-		jm: jobmanager.NewManager(),
+		jm: manager,
 	}
 }
 
 func (s *jobmanagerServer) Start(ctx context.Context, jcr *v1.JobCreationRequest) (*v1.Job, error) {
-	userID, err := s.userIDFromContext(ctx)
+	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +52,7 @@ func (s *jobmanagerServer) Start(ctx context.Context, jcr *v1.JobCreationRequest
 }
 
 func (s *jobmanagerServer) Stop(ctx context.Context, requestJobID *v1.JobID) (*v1.NilMessage, error) {
-	userID, err := s.userIDFromContext(ctx)
+	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +79,9 @@ func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *v1.JobSta
 			},
 			Name: internalStatus.Name,
 		},
+		Owner:        internalStatus.Owner,
 		IsRunning:    internalStatus.Running,
+		Pid:          int32(internalStatus.Pid),
 		ExitCode:     int32(internalStatus.ExitCode),
 		SignalNumber: int32(internalStatus.SignalNum),
 		ErrorMessage: errMsg,
@@ -82,7 +89,7 @@ func internalToExternalStatusV1(internalStatus *jobmanager.JobStatus) *v1.JobSta
 }
 
 func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *v1.JobID) (*v1.JobStatus, error) {
-	userID, err := s.userIDFromContext(ctx)
+	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +103,7 @@ func (s *jobmanagerServer) Query(ctx context.Context, requestJobID *v1.JobID) (*
 }
 
 func (s *jobmanagerServer) List(ctx context.Context, _ *v1.NilMessage) (*v1.JobStatusList, error) {
-	userID, err := s.userIDFromContext(ctx)
+	userID, err := grpcutil.GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +127,7 @@ func (s *jobmanagerServer) StreamOutput(
 	response v1.JobManager_StreamOutputServer,
 ) error {
 
-	userID, err := s.userIDFromContext(response.Context())
+	userID, err := grpcutil.GetUserIDFromContext(response.Context())
 	if err != nil {
 		return err
 	}
@@ -135,30 +142,30 @@ func (s *jobmanagerServer) StreamOutput(
 		byteStream, err = s.jm.StderrStream(userID, request.JobID.Id)
 
 	default:
-		return status.Errorf(codes.InvalidArgument, "unsupported stream: %v", streamType)
+		return status.Errorf(codes.InvalidArgument, "jobmanager: unsupported stream: %v", streamType)
 	}
 
 	if err != nil {
 		return status.Errorf(errorToGRPCErrorCode(err), err.Error())
 	}
+	defer byteStream.Close()
 
-	for data := range byteStream.Stream() {
-		response.Send(&v1.JobOutput{Output: data})
+	for {
+		select {
+		// We don't have a specific requirement to support a deadline for the
+		// stream operation from our client. But, since this is an API, someone
+		// might develop a client for it that does want to set a deadline.
+		// This will support that.
+		case <-response.Context().Done():
+			return status.Errorf(codes.DeadlineExceeded, "jobManager: deadline exceeded")
+
+		case data, ok := <-byteStream.Stream():
+			if !ok {
+				return nil
+			}
+			response.Send(&v1.JobOutput{Output: data})
+		}
 	}
-
-	return nil
-}
-
-// userIDFromContext extracts and returns the userID from the given context.
-// If the userID doesn't exist, returns an error ready to be returned by a
-// gRPC API.
-func (s *jobmanagerServer) userIDFromContext(ctx context.Context) (string, error) {
-	if userID, ok := ctx.Value(&grpcutil.UserIDContext{}).(string); ok && userID != "" {
-		return userID, nil
-	}
-
-	log.Printf("Failed to find object of type grpcutilUserIDContext in context or userID was empty")
-	return "", status.Error(codes.Unauthenticated, "jobmanager: unauthenticated")
 }
 
 // errorToGRPCErrorCode maps the given error to a suitable gRPC error code.

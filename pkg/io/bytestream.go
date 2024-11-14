@@ -3,6 +3,7 @@ package io
 import (
 	"log"
 	"sync"
+	"sync/atomic"
 )
 
 // DefaultMaxBufferSize is the default maximum number of bytes that a ByteStream
@@ -15,6 +16,7 @@ type ByteStream struct {
 	buffer         OutputBuffer
 	channel        chan []byte
 	maxReadSize    int
+	closed         int32 // 0 = not closed, 1 = closed
 }
 
 // NewByteStream creates and returns a new ByteStream associated with the
@@ -42,12 +44,18 @@ func (b *ByteStream) Stream() <-chan []byte {
 			readBuffer := make([]byte, b.maxReadSize)
 
 			for {
-				bufferSize, closed := b.buffer.waitForChange(nextByte)
+				if b.Closed() {
+					close(b.channel)
+					return
+				}
 
-				// At this point the underlying buffer could be closed, there could
-				// be new bytes in the buffer to process, or both.
+				bufferSize, outputBufferClosed := b.buffer.waitForChange(nextByte)
 
-				if bufferSize == nextByte && closed {
+				// At this point this ByteStream could be closed.
+				// Also, the underlyingbuffer could be closed, there could be
+				// new bytes in the buffer to process, or both.
+
+				if b.Closed() || (bufferSize == nextByte && outputBufferClosed) {
 					// No new bytes to process and the buffer is closed.  This
 					// streamer must have consumed all the bytes that were written
 					// to the buffer. Terminate the goroutine.
@@ -86,4 +94,15 @@ func (b *ByteStream) Stream() <-chan []byte {
 	})
 
 	return b.channel
+}
+
+// Close marks this ByteStream as closed.  If there is a goroutine associated with
+// this ByteStream, it will close the stream and terminate.
+func (b *ByteStream) Close() {
+	atomic.StoreInt32(&b.closed, 1)
+}
+
+// Closed returns true if this ByteStream is closed, false otherwise.
+func (b *ByteStream) Closed() bool {
+	return atomic.LoadInt32(&b.closed) > 0
 }
