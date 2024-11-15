@@ -1,6 +1,20 @@
 //go:build integration
 // +build integration
 
+/*
+Copyright 2021 Andy Dalton
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package server_test
 
 import (
@@ -12,7 +26,7 @@ import (
 	"time"
 
 	"github.com/obaraelijah/secureproc/pkg/command"
-	v1 "github.com/obaraelijah/secureproc/service/v1"
+	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
 	"google.golang.org/grpc"
 
@@ -69,11 +83,11 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 
@@ -114,11 +128,11 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -160,11 +174,11 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -206,11 +220,11 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	fmt.Println(err)
 	assert.Error(t, err)
@@ -252,11 +266,11 @@ func Test_clientServer_Success(t *testing.T) {
 	require.Nil(t, err)
 	defer conn.Close()
 
-	client := v1.NewJobManagerClient(conn)
+	client := jobmanagerv1.NewJobManagerClient(conn)
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err = client.List(ctx, &v1.NilMessage{})
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 

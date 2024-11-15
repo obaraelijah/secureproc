@@ -9,7 +9,7 @@ import (
 	"github.com/obaraelijah/secureproc/pkg/jobmanager/jobmanagertest"
 	"github.com/obaraelijah/secureproc/server/serverv1"
 	"github.com/obaraelijah/secureproc/server/serverv1/testserverv1"
-	v1 "github.com/obaraelijah/secureproc/service/v1"
+	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ func Test_jobmanagerServer_Start_NoUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	_, err := server.Start(context.Background(), &v1.JobCreationRequest{})
+	_, err := server.Start(context.Background(), &jobmanagerv1.JobCreationRequest{})
 
 	assert.NotNil(t, err)
 }
@@ -37,7 +37,7 @@ func Test_jobmanagerServer_Start_WithUserID(t *testing.T) {
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	job, err := server.Start(ctx, &v1.JobCreationRequest{
+	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
@@ -62,13 +62,13 @@ func Test_jobmanagerServer_Start_NameExists(t *testing.T) {
 
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, _ = server.Start(ctx, &v1.JobCreationRequest{
+	_, _ = server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
 
-	_, err := server.Start(ctx, &v1.JobCreationRequest{
+	_, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
@@ -81,7 +81,7 @@ func Test_jobmanagerServer_Stop_NoUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	_, err := server.Stop(context.Background(), &v1.JobID{Id: "b13620d4-db7f-46d5-b445-b29af0f87d2c"})
+	_, err := server.Stop(context.Background(), &jobmanagerv1.JobID{Id: "b13620d4-db7f-46d5-b445-b29af0f87d2c"})
 
 	assert.NotNil(t, err)
 }
@@ -91,7 +91,7 @@ func Test_jobmanagerServer_Stop_MalformedJobID(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err := server.Stop(ctx, &v1.JobID{Id: "not-a-valid-id"})
+	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-id"})
 
 	assert.NotNil(t, err)
 }
@@ -101,7 +101,7 @@ func Test_jobmanagerServer_Stop_JobDoesNotExist(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err := server.Stop(ctx, &v1.JobID{Id: "eeafbe44-348f-47ba-ba2b-3e013ee8bb85"})
+	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "eeafbe44-348f-47ba-ba2b-3e013ee8bb85"})
 
 	assert.NotNil(t, err)
 }
@@ -117,12 +117,12 @@ func Test_jobmanagerServer_Stop_JobExists(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	job, _ := server.Start(ctx, &v1.JobCreationRequest{
+	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
-	_, err := server.Stop(ctx, &v1.JobID{Id: job.Id.Id})
+	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
 
 	assert.Nil(t, err)
 }
@@ -131,7 +131,7 @@ func Test_jobmanagerServer_Query_NoUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	_, err := server.Query(context.Background(), &v1.JobID{Id: "3e3d8936-5fd7-46bb-9fd2-8423c607a0b2"})
+	_, err := server.Query(context.Background(), &jobmanagerv1.JobID{Id: "3e3d8936-5fd7-46bb-9fd2-8423c607a0b2"})
 
 	assert.Error(t, err)
 }
@@ -141,7 +141,7 @@ func Test_jobmanagerServer_Query_MalformedJobID(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
 
-	_, err := server.Query(ctx, &v1.JobID{Id: "not-a-valid-jobID"})
+	_, err := server.Query(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-jobID"})
 
 	assert.Error(t, err)
 }
@@ -158,12 +158,12 @@ func Test_jobmanagerServer_Query_JobExists(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
 
-	job, _ := server.Start(ctx, &v1.JobCreationRequest{
+	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
-	jobStatus, err := server.Query(ctx, &v1.JobID{Id: job.Id.Id})
+	jobStatus, err := server.Query(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
 
 	assert.Nil(t, err)
 	assert.Equal(t, jobName, jobStatus.Job.Name)
@@ -179,7 +179,7 @@ func Test_jobmanagerServer_List_NoUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	_, err := server.List(context.Background(), &v1.NilMessage{})
+	_, err := server.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
 }
@@ -190,7 +190,7 @@ func Test_jobmanagerServer_List_NoJobs(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
 
-	jobList, err := server.List(ctx, &v1.NilMessage{})
+	jobList, err := server.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(jobList.JobStatusList))
@@ -208,12 +208,12 @@ func Test_jobmanagerServer_List_JobExists(t *testing.T) {
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
 
-	job, _ := server.Start(ctx, &v1.JobCreationRequest{
+	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
-	jobList, err := server.List(ctx, &v1.NilMessage{})
+	jobList, err := server.List(ctx, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(jobList.JobStatusList))
@@ -234,7 +234,7 @@ func Test_jobmanagerServer_Stream_NoUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	err := server.StreamOutput(&v1.StreamOutputRequest{}, mockServer)
+	err := server.StreamOutput(&jobmanagerv1.StreamOutputRequest{}, mockServer)
 
 	assert.Error(t, err)
 }
@@ -246,9 +246,9 @@ func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
 	}
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	req := &v1.StreamOutputRequest{
-		JobID:        &v1.JobID{Id: "not-a-valid-jobID"},
-		OutputStream: v1.OutputStream_STDOUT,
+	req := &jobmanagerv1.StreamOutputRequest{
+		JobID:        &jobmanagerv1.JobID{Id: "not-a-valid-jobID"},
+		OutputStream: jobmanagerv1.OutputStream_STDOUT,
 	}
 
 	err := server.StreamOutput(req, mockServer)
@@ -262,9 +262,9 @@ func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
 	}
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	req := &v1.StreamOutputRequest{
-		JobID:        &v1.JobID{Id: "1294326a-816a-4f13-8a8b-ff92c7a78984"},
-		OutputStream: v1.OutputStream(-1),
+	req := &jobmanagerv1.StreamOutputRequest{
+		JobID:        &jobmanagerv1.JobID{Id: "1294326a-816a-4f13-8a8b-ff92c7a78984"},
+		OutputStream: jobmanagerv1.OutputStream(-1),
 	}
 
 	err := server.StreamOutput(req, mockServer)
@@ -286,15 +286,15 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	job, _ := server.Start(ctx, &v1.JobCreationRequest{
+	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
 
-	req := &v1.StreamOutputRequest{
-		JobID:        &v1.JobID{Id: job.Id.Id},
-		OutputStream: v1.OutputStream_STDERR,
+	req := &jobmanagerv1.StreamOutputRequest{
+		JobID:        &jobmanagerv1.JobID{Id: job.Id.Id},
+		OutputStream: jobmanagerv1.OutputStream_STDERR,
 	}
 
 	cancel() // Intentially calling this here, not deferring it
@@ -316,18 +316,18 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	job, _ := server.Start(ctx, &v1.JobCreationRequest{
+	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
 
-	req := &v1.StreamOutputRequest{
-		JobID:        &v1.JobID{Id: job.Id.Id},
-		OutputStream: v1.OutputStream_STDOUT,
+	req := &jobmanagerv1.StreamOutputRequest{
+		JobID:        &jobmanagerv1.JobID{Id: job.Id.Id},
+		OutputStream: jobmanagerv1.OutputStream_STDOUT,
 	}
 
-	server.Stop(ctx, &v1.JobID{Id: job.Id.Id})
+	server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
 	err := server.StreamOutput(req, mockServer)
 
 	assert.Nil(t, err)

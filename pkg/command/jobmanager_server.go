@@ -6,9 +6,8 @@ import (
 	"os"
 
 	"github.com/obaraelijah/secureproc/server/serverv1"
-	v1 "github.com/obaraelijah/secureproc/service/v1"
+	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
-
 	"google.golang.org/grpc"
 )
 
@@ -18,6 +17,7 @@ import (
 func RunJobmanagerServer(
 	network, address, caCert, serverCert, serverKey string,
 	stopChan <-chan os.Signal,
+
 ) error {
 	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
@@ -30,7 +30,7 @@ func RunJobmanagerServer(
 		grpc.StreamInterceptor(grpcutil.StreamGetUserIDFromContextInterceptor),
 	)
 
-	v1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
+	jobmanagerv1.RegisterJobManagerServer(grpcServer, serverv1.NewJobmanagerServer())
 
 	go func() {
 		l, err := net.Listen(network, address)

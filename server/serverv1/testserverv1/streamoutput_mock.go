@@ -3,19 +3,19 @@ package testserverv1
 import (
 	"context"
 
-	v1 "github.com/obaraelijah/secureproc/service/v1"
+	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"google.golang.org/grpc/metadata"
 )
 
 // MockJobManagerStreamServer mocks the APIs used by a JobManager server.
 type MockJobmanagerStreamServer struct {
-	LastJobOutput *v1.JobOutput
+	LastJobOutput *jobmanagerv1.JobOutput
 	SendCount     int
 	SendError     error
 	NextContext   context.Context
 }
 
-func (m *MockJobmanagerStreamServer) Send(output *v1.JobOutput) error {
+func (m *MockJobmanagerStreamServer) Send(output *jobmanagerv1.JobOutput) error {
 	m.SendCount++
 	m.LastJobOutput = output
 	return m.SendError
