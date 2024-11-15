@@ -1,20 +1,6 @@
 //go:build integration
 // +build integration
 
-/*
-Copyright 2021 Andy Dalton
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-	http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package server_test
 
 import (
@@ -28,10 +14,9 @@ import (
 	"github.com/obaraelijah/secureproc/pkg/command"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
-	"google.golang.org/grpc"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 )
 
 // Note: There is some fragility with these tests.
@@ -203,6 +188,52 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 			certDir+"/ca.cert.pem",
 			certDir+"/server.cert.pem",
 			certDir+"/server.key.pem",
+			stop)
+		wg.Done()
+	}()
+
+	waitForServer()
+
+	tc, err := grpcutil.NewClientTransportCredentials(
+		certDir+"/ca.cert.pem",
+		certDir+"/weakclient.cert.pem",
+		certDir+"/weakclient.key.pem",
+	)
+	require.Nil(t, err)
+
+	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	require.Nil(t, err)
+	defer conn.Close()
+
+	client := jobmanagerv1.NewJobManagerClient(conn)
+
+	ctx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
+
+	_, err = client.List(ctx, &jobmanagerv1.NilMessage{})
+
+	fmt.Println(err)
+	assert.Error(t, err)
+
+	stop <- os.Kill
+	wg.Wait()
+}
+
+func Test_clientServer_TooWeakServerAndClientCert(t *testing.T) {
+	if certDir == "" {
+		t.Skip("Skipping test, CERTDIR not set")
+	}
+
+	stop := make(chan os.Signal, 1)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		_ = command.RunJobmanagerServer(
+			"tcp",
+			":12345",
+			certDir+"/ca.cert.pem",
+			certDir+"/weakserver.cert.pem",
+			certDir+"/weakserver.key.pem",
 			stop)
 		wg.Done()
 	}()
