@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager/jobmanagertest"
-	"github.com/obaraelijah/secureproc/server/serverv1"
+	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/server/serverv1/testserverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"

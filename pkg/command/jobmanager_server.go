@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/obaraelijah/secureproc/server/serverv1"
+	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
 	"google.golang.org/grpc"
