@@ -6,9 +6,10 @@ package server_test
 import (
 	"context"
 	"fmt"
+	"net"
+	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/obaraelijah/secureproc/certs"
 	"github.com/obaraelijah/secureproc/pkg/command"
@@ -19,30 +20,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Note: There is some fragility with these tests.
-//       * This expects port 12345 to be available (so we wouldn't want to
-//         run multiple instances of this test on the same host in parallel)
-//       * There's a Sleep() between starting the server and trying to connect
-//         to it.  That's open to race conditions.  I'd like to find a way to
-//         know that the server is up before we try to connect to it.
-
 func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			ctx,
-			"tcp",
-			":12345",
-			certs.CACert,
-			certs.ServerCert,
-			certs.ServerKey)
-		wg.Done()
-	}()
-
-	waitForServer()
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	require.Nil(t, err)
 
 	tc, err := grpcutil.NewClientTransportCredentials(
 		certs.CACert,
@@ -51,7 +35,7 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -69,18 +53,8 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			ctx,
-			"tcp",
-			":12345",
-			certs.CACert,
-			certs.BadServerCert,
-			certs.BadServerKey)
-		wg.Done()
-	}()
-
-	waitForServer()
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.BadServerCert, certs.BadServerKey)
+	require.Nil(t, err)
 
 	tc, err := grpcutil.NewClientTransportCredentials(
 		certs.CACert,
@@ -89,7 +63,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -111,18 +85,8 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			ctx,
-			"tcp",
-			":12345",
-			certs.CACert,
-			certs.WeakServerCert,
-			certs.WeakServerKey)
-		wg.Done()
-	}()
-
-	waitForServer()
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.WeakServerCert, certs.WeakServerKey)
+	require.Nil(t, err)
 
 	tc, err := grpcutil.NewClientTransportCredentials(
 		certs.CACert,
@@ -131,7 +95,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -153,18 +117,8 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			ctx,
-			"tcp",
-			":12345",
-			certs.CACert,
-			certs.ServerCert,
-			certs.ServerKey)
-		wg.Done()
-	}()
-
-	waitForServer()
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	require.Nil(t, err)
 
 	tc, err := grpcutil.NewClientTransportCredentials(
 		certs.CACert,
@@ -173,7 +127,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -195,18 +149,8 @@ func Test_clientServer_Success(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go func() {
-		_ = command.RunJobmanagerServer(
-			ctx,
-			"tcp",
-			":12345",
-			certs.CACert,
-			certs.ServerCert,
-			certs.ServerKey)
-		wg.Done()
-	}()
-
-	waitForServer()
+	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	require.Nil(t, err)
 
 	tc, err := grpcutil.NewClientTransportCredentials(
 		certs.CACert,
@@ -215,7 +159,7 @@ func Test_clientServer_Success(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:12345", grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -231,10 +175,32 @@ func Test_clientServer_Success(t *testing.T) {
 	wg.Wait()
 }
 
-// waitForServer waits for the server to come up before attempting a network
-// connection to it.
-//
-// This is gross, but I didn't find a better way to check.
-func waitForServer() {
-	time.Sleep(1 * time.Second)
+func getPort(address string) (string, error) {
+	tokens := strings.Split(address, ":")
+	if len(tokens) == 0 {
+		return "", fmt.Errorf("failed to find port in address '%s'", address)
+	}
+
+	return tokens[len(tokens)-1], nil
+}
+
+func runServer(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	t *testing.T,
+	caCert, serverCert, serverKey []byte,
+) (port string, err error) {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return "", err
+	}
+
+	go func() {
+		runErr := command.RunJobmanagerServer(
+			ctx, listener, caCert, serverCert, serverKey)
+		assert.Nil(t, runErr)
+		wg.Done()
+	}()
+
+	return getPort(listener.Addr().String())
 }
