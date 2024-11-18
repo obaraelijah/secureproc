@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/obaraelijah/secureproc/certs"
 	"github.com/obaraelijah/secureproc/pkg/command"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
@@ -26,20 +27,7 @@ import (
 //         to it.  That's open to race conditions.  I'd like to find a way to
 //         know that the server is up before we try to connect to it.
 
-var certDir string
-
-func init() {
-	dir, ok := os.LookupEnv("CERTDIR")
-	if ok {
-		certDir = dir
-	}
-}
-
 func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
 	stop := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -48,9 +36,9 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 		_ = command.RunJobmanagerServer(
 			"tcp",
 			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/server.cert.pem",
-			certDir+"/server.key.pem",
+			certs.CACert,
+			certs.ServerCert,
+			certs.ServerKey,
 			stop)
 		wg.Done()
 	}()
@@ -58,9 +46,9 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	waitForServer()
 
 	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/badclient.cert.pem",
-		certDir+"/badclient.key.pem",
+		certs.CACert,
+		certs.BadClientCert,
+		certs.BadClientKey,
 	)
 	require.Nil(t, err)
 
@@ -78,10 +66,6 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 }
 
 func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
 	stop := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -90,9 +74,9 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 		_ = command.RunJobmanagerServer(
 			"tcp",
 			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/badserver.cert.pem",
-			certDir+"/badserver.key.pem",
+			certs.CACert,
+			certs.BadServerCert,
+			certs.BadServerKey,
 			stop)
 		wg.Done()
 	}()
@@ -100,9 +84,9 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	waitForServer()
 
 	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/client1.cert.pem",
-		certDir+"/client1.key.pem",
+		certs.CACert,
+		certs.Client1Cert,
+		certs.Client1Key,
 	)
 	require.Nil(t, err)
 
@@ -124,10 +108,6 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 }
 
 func Test_clientServer_TooWeakServerCert(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
 	stop := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -136,9 +116,9 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 		_ = command.RunJobmanagerServer(
 			"tcp",
 			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/weakserver.cert.pem",
-			certDir+"/weakserver.key.pem",
+			certs.CACert,
+			certs.WeakServerCert,
+			certs.WeakServerKey,
 			stop)
 		wg.Done()
 	}()
@@ -146,9 +126,9 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	waitForServer()
 
 	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/client1.cert.pem",
-		certDir+"/client1.key.pem",
+		certs.CACert,
+		certs.Client1Cert,
+		certs.Client1Key,
 	)
 	require.Nil(t, err)
 
@@ -170,10 +150,6 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 }
 
 func Test_clientServer_TooWeakClientCert(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
 	stop := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -182,9 +158,9 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 		_ = command.RunJobmanagerServer(
 			"tcp",
 			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/server.cert.pem",
-			certDir+"/server.key.pem",
+			certs.CACert,
+			certs.ServerCert,
+			certs.ServerKey,
 			stop)
 		wg.Done()
 	}()
@@ -192,9 +168,9 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	waitForServer()
 
 	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/weakclient.cert.pem",
-		certDir+"/weakclient.key.pem",
+		certs.CACert,
+		certs.WeakClientCert,
+		certs.WeakClientKey,
 	)
 	require.Nil(t, err)
 
@@ -216,10 +192,6 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 }
 
 func Test_clientServer_Success(t *testing.T) {
-	if certDir == "" {
-		t.Skip("Skipping test, CERTDIR not set")
-	}
-
 	stop := make(chan os.Signal, 1)
 	var wg sync.WaitGroup
 
@@ -228,9 +200,9 @@ func Test_clientServer_Success(t *testing.T) {
 		_ = command.RunJobmanagerServer(
 			"tcp",
 			":12345",
-			certDir+"/ca.cert.pem",
-			certDir+"/server.cert.pem",
-			certDir+"/server.key.pem",
+			certs.CACert,
+			certs.ServerCert,
+			certs.ServerKey,
 			stop)
 		wg.Done()
 	}()
@@ -238,9 +210,9 @@ func Test_clientServer_Success(t *testing.T) {
 	waitForServer()
 
 	tc, err := grpcutil.NewClientTransportCredentials(
-		certDir+"/ca.cert.pem",
-		certDir+"/client1.cert.pem",
-		certDir+"/client1.key.pem",
+		certs.CACert,
+		certs.Client1Cert,
+		certs.Client1Key,
 	)
 	require.Nil(t, err)
 

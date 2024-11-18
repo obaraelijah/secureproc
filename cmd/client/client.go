@@ -11,8 +11,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/obaraelijah/secureproc/certs"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
 	"github.com/obaraelijah/secureproc/util/grpcutil"
+
 	"google.golang.org/grpc"
 )
 
@@ -77,10 +79,15 @@ func main() {
 
 	fmt.Println("User:", user)
 
+	clientCert, clientKey, err := certs.ClientFactory(user)
+	if err != nil {
+		panic(err)
+	}
+
 	tc, err := grpcutil.NewClientTransportCredentials(
-		"./certs/ca.cert.pem",
-		fmt.Sprintf("./certs/%s.cert.pem", user),
-		fmt.Sprintf("./certs/%s.key.pem", user),
+		certs.CACert,
+		clientCert,
+		clientKey,
 	)
 	if err != nil {
 		panic(err)
