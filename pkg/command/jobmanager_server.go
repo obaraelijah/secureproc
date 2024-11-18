@@ -1,9 +1,9 @@
 package command
 
 import (
+	"context"
 	"log"
 	"net"
-	"os"
 
 	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
@@ -15,10 +15,9 @@ import (
 // on the given address, with the given CA certificate and server certificate
 // and key.
 func RunJobmanagerServer(
+	ctx context.Context,
 	network, address string,
 	caCert, serverCert, serverKey []byte,
-	stopChan <-chan os.Signal,
-
 ) error {
 	tc, err := grpcutil.NewServerTransportCredentials(caCert, serverCert, serverKey)
 	if err != nil {
@@ -45,7 +44,7 @@ func RunJobmanagerServer(
 		}
 	}()
 
-	<-stopChan
+	<-ctx.Done()
 	grpcServer.GracefulStop()
 
 	return nil
