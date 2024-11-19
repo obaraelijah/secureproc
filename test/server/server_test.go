@@ -13,8 +13,8 @@ import (
 
 	"github.com/obaraelijah/secureproc/certs"
 	"github.com/obaraelijah/secureproc/pkg/command"
+	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
-	"github.com/obaraelijah/secureproc/util/grpcutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -28,7 +28,7 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		certs.BadClientCert,
 		certs.BadClientKey,
@@ -56,7 +56,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	port, err := runServer(ctx, &wg, t, certs.CACert, certs.BadServerCert, certs.BadServerKey)
 	require.Nil(t, err)
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		certs.Client1Cert,
 		certs.Client1Key,
@@ -69,7 +69,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
@@ -88,7 +88,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	port, err := runServer(ctx, &wg, t, certs.CACert, certs.WeakServerCert, certs.WeakServerKey)
 	require.Nil(t, err)
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		certs.Client1Cert,
 		certs.Client1Key,
@@ -101,7 +101,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
@@ -120,7 +120,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		certs.WeakClientCert,
 		certs.WeakClientKey,
@@ -133,7 +133,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "weakclient")
+	opCtx := serverv1.AttachUserIDToContext(context.Background(), "weakclient")
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
@@ -152,7 +152,7 @@ func Test_clientServer_Success(t *testing.T) {
 	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		certs.Client1Cert,
 		certs.Client1Key,
@@ -165,7 +165,7 @@ func Test_clientServer_Success(t *testing.T) {
 
 	client := jobmanagerv1.NewJobManagerClient(conn)
 
-	opCtx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	opCtx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 

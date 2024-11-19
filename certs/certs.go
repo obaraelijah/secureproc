@@ -1,14 +1,14 @@
-package grpcutil
+package certs
 
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
+	"errors"
 
 	"google.golang.org/grpc/credentials"
 )
 
-// NewServerTransportCredentials creates an returns a new
+// NewServerTransportCredentials creates and returns a new
 // credentials.TransportCredentials using the given certificate information
 // with a strong TLS server configuration.
 func NewServerTransportCredentials(caCert, cert, key []byte) (credentials.TransportCredentials, error) {
@@ -16,7 +16,7 @@ func NewServerTransportCredentials(caCert, cert, key []byte) (credentials.Transp
 	return newTransportCredentials(caCert, cert, key, isServer)
 }
 
-// NewClientTransportCredentials creates an returns a new
+// NewClientTransportCredentials creates and returns a new
 // credentials.TransportCredentials using the given certificate information
 // with a strong TLS client configuration.
 func NewClientTransportCredentials(caCert, cert, key []byte) (credentials.TransportCredentials, error) {
@@ -32,22 +32,17 @@ func newTransportCredentials(caCert, cert, key []byte, isServer bool) (credentia
 
 	capool := x509.NewCertPool()
 	if !capool.AppendCertsFromPEM(caCert) {
-		return nil, fmt.Errorf("cannot append ca cert to ca pool")
+		return nil, errors.New("cannot append ca cert to ca pool")
 	}
 
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{certificate},
-		MinVersion:   tls.VersionTLS12,
-		CurvePreferences: []tls.CurveID{
-			tls.CurveP521,
-			tls.CurveP384,
-			tls.CurveP256,
-		},
+		MinVersion:   tls.VersionTLS13,
 		CipherSuites: []uint16{
+			tls.TLS_AES_256_GCM_SHA384,
+			tls.TLS_CHACHA20_POLY1305_SHA256,
 			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
 		},
 	}
 

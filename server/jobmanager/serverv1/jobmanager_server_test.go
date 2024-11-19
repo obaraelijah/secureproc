@@ -10,7 +10,6 @@ import (
 	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/server/serverv1/testserverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
-	"github.com/obaraelijah/secureproc/util/grpcutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +33,7 @@ func Test_jobmanagerServer_Start_WithUserID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
@@ -59,7 +58,7 @@ func Test_jobmanagerServer_Start_NameExists(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
 
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
@@ -88,7 +87,7 @@ func Test_jobmanagerServer_Stop_NoUserID(t *testing.T) {
 func Test_jobmanagerServer_Stop_MalformedJobID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-id"})
 
@@ -98,7 +97,7 @@ func Test_jobmanagerServer_Stop_MalformedJobID(t *testing.T) {
 func Test_jobmanagerServer_Stop_JobDoesNotExist(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err := server.Stop(ctx, &jobmanagerv1.JobID{Id: "eeafbe44-348f-47ba-ba2b-3e013ee8bb85"})
 
@@ -114,7 +113,7 @@ func Test_jobmanagerServer_Stop_JobExists(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
@@ -139,7 +138,7 @@ func Test_jobmanagerServer_Query_NoUserID(t *testing.T) {
 func Test_jobmanagerServer_Query_MalformedJobID(t *testing.T) {
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	_, err := server.Query(ctx, &jobmanagerv1.JobID{Id: "not-a-valid-jobID"})
 
@@ -156,7 +155,7 @@ func Test_jobmanagerServer_Query_JobExists(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
+	ctx := serverv1.AttachUserIDToContext(context.Background(), owner)
 
 	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
@@ -190,7 +189,7 @@ func Test_jobmanagerServer_List_NoJobs(t *testing.T) {
 	const owner = "user1"
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
+	ctx := serverv1.AttachUserIDToContext(context.Background(), owner)
 
 	jobList, err := server.List(ctx, &jobmanagerv1.NilMessage{})
 
@@ -208,7 +207,7 @@ func Test_jobmanagerServer_List_JobExists(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), owner)
+	ctx := serverv1.AttachUserIDToContext(context.Background(), owner)
 
 	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
@@ -244,7 +243,7 @@ func Test_jobmanagerServer_Stream_NoUserID(t *testing.T) {
 }
 
 func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 	mockServer := &testserverv1.MockJobmanagerStreamServer{
 		NextContext: ctx,
 	}
@@ -260,7 +259,7 @@ func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
 }
 
 func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 	mockServer := &testserverv1.MockJobmanagerStreamServer{
 		NextContext: ctx,
 	}
@@ -281,7 +280,7 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 		programPath = "/bin/ls"
 	)
 	args := []string{"-l", "/"}
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 	ctx, cancel := context.WithCancel(ctx)
 
 	mockServer := &testserverv1.MockJobmanagerStreamServer{
@@ -314,7 +313,7 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 		programPath = "/bin/ls"
 	)
 	args := []string{"-l", "/"}
-	ctx := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctx := serverv1.AttachUserIDToContext(context.Background(), "user1")
 	mockServer := &testserverv1.MockJobmanagerStreamServer{
 		NextContext: ctx,
 	}
@@ -347,7 +346,7 @@ func Test_jobmanagerServer_Multitenant(t *testing.T) {
 		programPath = "/bin/ls"
 	)
 	args := []string{"-l", "/"}
-	ctxUser1 := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
@@ -359,7 +358,7 @@ func Test_jobmanagerServer_Multitenant(t *testing.T) {
 	assert.Nil(t, err)
 
 	// User2 cannot set User1's jobs
-	ctxUser2 := grpcutil.AttachUserIDToContext(context.Background(), "user2")
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), "user2")
 	jobList, err := server.List(ctxUser2, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)
@@ -372,7 +371,7 @@ func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {
 		programPath = "/bin/ls"
 	)
 	args := []string{"-l", "/"}
-	ctxUser1 := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+	ctxUser1 := serverv1.AttachUserIDToContext(context.Background(), "user1")
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
@@ -384,7 +383,7 @@ func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	assert.Nil(t, err)
 
 	// User2 cannot set User1's jobs
-	ctxUser2 := grpcutil.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
+	ctxUser2 := serverv1.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
 	jobList, err := server.List(ctxUser2, &jobmanagerv1.NilMessage{})
 
 	assert.Nil(t, err)

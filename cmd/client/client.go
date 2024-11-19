@@ -13,7 +13,6 @@ import (
 
 	"github.com/obaraelijah/secureproc/certs"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
-	"github.com/obaraelijah/secureproc/util/grpcutil"
 
 	"google.golang.org/grpc"
 )
@@ -84,7 +83,7 @@ func main() {
 		panic(err)
 	}
 
-	tc, err := grpcutil.NewClientTransportCredentials(
+	tc, err := certs.NewClientTransportCredentials(
 		certs.CACert,
 		clientCert,
 		clientKey,

@@ -6,7 +6,6 @@ import (
 	"github.com/obaraelijah/secureproc/pkg/io"
 	"github.com/obaraelijah/secureproc/pkg/jobmanager"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
-	"github.com/obaraelijah/secureproc/util/grpcutil"
 )
 
 // jobmanagerServer implements the gRPC handler for the jobmanager service.
@@ -33,7 +32,7 @@ func (s *jobmanagerServer) Start(
 	jcr *jobmanagerv1.JobCreationRequest,
 ) (*jobmanagerv1.Job, error) {
 
-	userID, err := grpcutil.GetUserIDFromContext(ctx)
+	userID, err := GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +55,7 @@ func (s *jobmanagerServer) Stop(
 	requestJobID *jobmanagerv1.JobID,
 ) (*jobmanagerv1.NilMessage, error) {
 
-	userID, err := grpcutil.GetUserIDFromContext(ctx)
+	userID, err := GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func (s *jobmanagerServer) Query(
 	requestJobID *jobmanagerv1.JobID,
 ) (*jobmanagerv1.JobStatus, error) {
 
-	userID, err := grpcutil.GetUserIDFromContext(ctx)
+	userID, err := GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +114,7 @@ func (s *jobmanagerServer) List(
 	_ *jobmanagerv1.NilMessage,
 ) (*jobmanagerv1.JobStatusList, error) {
 
-	userID, err := grpcutil.GetUserIDFromContext(ctx)
+	userID, err := GetUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +138,7 @@ func (s *jobmanagerServer) StreamOutput(
 	response jobmanagerv1.JobManager_StreamOutputServer,
 ) error {
 
-	userID, err := grpcutil.GetUserIDFromContext(response.Context())
+	userID, err := GetUserIDFromContext(response.Context())
 	if err != nil {
 		return err
 	}

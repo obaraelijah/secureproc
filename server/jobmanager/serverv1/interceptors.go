@@ -1,4 +1,4 @@
-package grpcutil
+package serverv1
 
 import (
 	"context"
@@ -20,11 +20,14 @@ type userIDContext struct{}
 // If the userID doesn't exist, returns an error ready to be returned by a
 // gRPC API.
 func GetUserIDFromContext(ctx context.Context) (string, error) {
-	if userID, ok := ctx.Value(&userIDContext{}).(string); ok && userID != "" {
-		return userID, nil
+
+	userID, ok := ctx.Value(&userIDContext{}).(string)
+
+	if !ok || userID == "" {
+		return "", jobmanager.Unauthenticated
 	}
 
-	return "", jobmanager.Unauthenticated
+	return userID, nil
 }
 
 // UnaryGetUserIDFromContextInterceptor extracts the CommonName from the client-
