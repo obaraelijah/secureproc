@@ -41,10 +41,10 @@ func Test_jobmanagerServer_Start_WithUserID(t *testing.T) {
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
+	assert.Nil(t, err)
 
 	_, parseErr := uuid.Parse(job.Id.Id)
 
-	assert.Nil(t, err)
 	assert.Nil(t, parseErr)
 	assert.Equal(t, jobName, job.Name)
 }
@@ -240,7 +240,7 @@ func Test_jobmanagerServer_Stream_NoUserID(t *testing.T) {
 
 	err := server.StreamOutput(&jobmanagerv1.StreamOutputRequest{}, mockServer)
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.Unauthenticated)
 }
 
 func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
@@ -256,7 +256,7 @@ func Test_jobmanagerServer_MalformedJobID(t *testing.T) {
 	}
 
 	err := server.StreamOutput(req, mockServer)
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.InvalidJobIDError)
 }
 
 func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
@@ -272,7 +272,7 @@ func Test_jobmanagerServer_InvalidStreamType(t *testing.T) {
 	}
 
 	err := server.StreamOutput(req, mockServer)
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, jobmanager.InvalidArgument)
 }
 
 func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
@@ -305,7 +305,7 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 	cancel() // Intentially calling this here, not deferring it
 	err = server.StreamOutput(req, mockServer)
 
-	assert.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
@@ -321,11 +321,12 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 
 	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
 	server := serverv1.NewJobManagerServerDetailed(jobManager)
-	job, _ := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
+	job, err := server.Start(ctx, &jobmanagerv1.JobCreationRequest{
 		Name:        jobName,
 		ProgramPath: programPath,
 		Arguments:   args,
 	})
+	assert.Nil(t, err)
 
 	req := &jobmanagerv1.StreamOutputRequest{
 		JobID:        &jobmanagerv1.JobID{Id: job.Id.Id},
@@ -333,9 +334,60 @@ func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
 	}
 
 	server.Stop(ctx, &jobmanagerv1.JobID{Id: job.Id.Id})
-	err := server.StreamOutput(req, mockServer)
+	err = server.StreamOutput(req, mockServer)
 
 	assert.Nil(t, err)
 	require.NotNil(t, mockServer.LastJobOutput)
 	assert.Equal(t, []byte(jobmanagertest.DefaultStandardOutput), mockServer.LastJobOutput.Output)
+}
+
+func Test_jobmanagerServer_Multitenant(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	_, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	// User2 cannot set User1's jobs
+	ctxUser2 := grpcutil.AttachUserIDToContext(context.Background(), "user2")
+	jobList, err := server.List(ctxUser2, &jobmanagerv1.NilMessage{})
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(jobList.JobStatusList))
+}
+
+func Test_jobmanagerServer_AdministratorCanSeeAllJobs(t *testing.T) {
+	const (
+		jobName     = "myJob"
+		programPath = "/bin/ls"
+	)
+	args := []string{"-l", "/"}
+	ctxUser1 := grpcutil.AttachUserIDToContext(context.Background(), "user1")
+
+	jobManager := jobmanager.NewManagerDetailed(jobmanagertest.NewMockJob, nil)
+	server := serverv1.NewJobManagerServerDetailed(jobManager)
+	_, err := server.Start(ctxUser1, &jobmanagerv1.JobCreationRequest{
+		Name:        jobName,
+		ProgramPath: programPath,
+		Arguments:   args,
+	})
+	assert.Nil(t, err)
+
+	// User2 cannot set User1's jobs
+	ctxUser2 := grpcutil.AttachUserIDToContext(context.Background(), jobmanager.Superuser)
+	jobList, err := server.List(ctxUser2, &jobmanagerv1.NilMessage{})
+
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(jobList.JobStatusList))
+	assert.Equal(t, "user1", jobList.JobStatusList[0].Owner)
 }
