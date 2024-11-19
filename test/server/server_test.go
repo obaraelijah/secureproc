@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
@@ -43,6 +45,9 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	_, err = client.List(context.Background(), &jobmanagerv1.NilMessage{})
 
 	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, codes.Unavailable, s.Code())
 
 	cancel()
 	wg.Wait()
@@ -73,8 +78,10 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
-	fmt.Println(err)
 	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, codes.Unavailable, s.Code())
 
 	cancel()
 	wg.Wait()
@@ -105,8 +112,11 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
-	fmt.Println(err)
 	assert.Error(t, err)
+
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, codes.Unavailable, s.Code())
 
 	cancel()
 	wg.Wait()
@@ -137,8 +147,10 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 
 	_, err = client.List(opCtx, &jobmanagerv1.NilMessage{})
 
-	fmt.Println(err)
 	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, codes.Unavailable, s.Code())
 
 	cancel()
 	wg.Wait()
