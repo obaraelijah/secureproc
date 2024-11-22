@@ -1,6 +1,9 @@
 ## SecureProc
 A secure job worker service that enables authorized users to run arbitrary Linux processes on remote hosts with resource constraints and output streaming capabilities.
 
+The specification for this project can be found at:
+https://docs.google.com/document/d/1hwHLGNdfZ25PtIlB9fvSlNQ3XgJN5Ce-L0qLHxjZlG4eyY
+
 ## Tree Organization
 
 The `cmd` package is contains the main executable programs.
