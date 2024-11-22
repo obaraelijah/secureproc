@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/obaraelijah/secureproc/pkg/io"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,6 +71,17 @@ func Test_ByteStream_MultipleReaders(t *testing.T) {
 	assert.Nil(t, <-stream2)
 }
 
+func Test_ByteStream_CloseNotYetStreamed(t *testing.T) {
+	buffer := io.NewMemoryBuffer()
+	bstream := io.NewByteStream(buffer)
+
+	bstream.Close()
+
+	// Once a ByteStream is closed, the stream should be closed
+	_, ok := <-bstream.Stream()
+	assert.False(t, ok)
+}
+
 func Test_ByteStream_ReadFromClosedStream(t *testing.T) {
 	buffer := io.NewMemoryBuffer()
 	bstream := io.NewByteStream(buffer)
@@ -79,6 +89,21 @@ func Test_ByteStream_ReadFromClosedStream(t *testing.T) {
 
 	buffer.Write([]byte("hello"))
 
+	bstream.Close()
+
+	// Once a ByteStream is closed, the stream should be closed
+	_, ok := <-stream
+	assert.False(t, ok)
+}
+
+func Test_ByteStream_DoubleClose(t *testing.T) {
+	buffer := io.NewMemoryBuffer()
+	bstream := io.NewByteStream(buffer)
+	stream := bstream.Stream()
+
+	buffer.Write([]byte("hello"))
+
+	bstream.Close()
 	bstream.Close()
 
 	// Once a ByteStream is closed, the stream should be closed
