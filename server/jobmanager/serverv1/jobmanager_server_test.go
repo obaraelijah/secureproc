@@ -10,6 +10,7 @@ import (
 	"github.com/obaraelijah/secureproc/server/jobmanager/serverv1"
 	"github.com/obaraelijah/secureproc/server/serverv1/testserverv1"
 	"github.com/obaraelijah/secureproc/service/jobmanager/jobmanagerv1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -306,7 +307,7 @@ func Test_jobmanagerServer_Stream_ContextCanceled(t *testing.T) {
 	cancel() // Intentially calling this here, not deferring it
 	err = server.StreamOutput(req, mockServer)
 
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.ErrorIs(t, err, context.Canceled)
 }
 
 func Test_jobmanagerServer_Stream_ReadSuccessfully(t *testing.T) {
