@@ -5,9 +5,7 @@ package server_test
 
 import (
 	"context"
-	"fmt"
 	"net"
-	"strings"
 	"sync"
 	"testing"
 
@@ -27,7 +25,7 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
 	tc, err := certs.NewClientTransportCredentials(
@@ -37,7 +35,7 @@ func Test_clientServer_clientCertNotSignedByTrustedCA(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -58,7 +56,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.BadServerCert, certs.BadServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.BadServerCert, certs.BadServerKey)
 	require.Nil(t, err)
 
 	tc, err := certs.NewClientTransportCredentials(
@@ -68,7 +66,7 @@ func Test_clientServer_serverCertNotSignedByTrustedCA(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -89,7 +87,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.WeakServerCert, certs.WeakServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.WeakServerCert, certs.WeakServerKey)
 	require.Nil(t, err)
 
 	tc, err := certs.NewClientTransportCredentials(
@@ -99,7 +97,7 @@ func Test_clientServer_TooWeakServerCert(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -121,7 +119,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
 	tc, err := certs.NewClientTransportCredentials(
@@ -131,7 +129,7 @@ func Test_clientServer_TooWeakClientCert(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -152,7 +150,7 @@ func Test_clientServer_Success(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
 	tc, err := certs.NewClientTransportCredentials(
@@ -162,7 +160,7 @@ func Test_clientServer_Success(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	conn, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tc))
+	conn, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tc))
 	require.Nil(t, err)
 	defer conn.Close()
 
@@ -180,7 +178,7 @@ func Test_clientServer_Multitenant(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
 	tcClient1, err := certs.NewClientTransportCredentials(
@@ -190,7 +188,7 @@ func Test_clientServer_Multitenant(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	connClient1, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient1))
+	connClient1, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tcClient1))
 	require.Nil(t, err)
 	defer connClient1.Close()
 
@@ -208,7 +206,7 @@ func Test_clientServer_Multitenant(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	connClient2, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient2))
+	connClient2, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tcClient2))
 	require.Nil(t, err)
 	defer connClient2.Close()
 
@@ -227,7 +225,7 @@ func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	port, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
+	hostPort, err := runServer(ctx, &wg, t, certs.CACert, certs.ServerCert, certs.ServerKey)
 	require.Nil(t, err)
 
 	tcClient1, err := certs.NewClientTransportCredentials(
@@ -237,7 +235,7 @@ func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	connClient1, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient1))
+	connClient1, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tcClient1))
 	require.Nil(t, err)
 	defer connClient1.Close()
 
@@ -255,7 +253,7 @@ func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	connClient2, err := grpc.Dial("localhost:"+port, grpc.WithTransportCredentials(tcClient2))
+	connClient2, err := grpc.Dial(hostPort, grpc.WithTransportCredentials(tcClient2))
 	require.Nil(t, err)
 	defer connClient2.Close()
 
@@ -269,23 +267,12 @@ func Test_clientServer_AdministratorCanSeeAllJobs(t *testing.T) {
 	wg.Wait()
 }
 
-// getPort returns the port portion of a address in the form "<address>:<port>"
-// It returns an error if there's no port
-func getPort(address string) (string, error) {
-	tokens := strings.Split(address, ":")
-	if len(tokens) == 0 {
-		return "", fmt.Errorf("failed to find port in address '%s'", address)
-	}
-
-	return tokens[len(tokens)-1], nil
-}
-
 func runServer(
 	ctx context.Context,
 	wg *sync.WaitGroup,
 	t *testing.T,
 	caCert, serverCert, serverKey []byte,
-) (port string, err error) {
+) (hostPort string, err error) {
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return "", err
@@ -300,5 +287,5 @@ func runServer(
 		wg.Done()
 	}()
 
-	return getPort(listener.Addr().String())
+	return listener.Addr().String(), nil
 }

@@ -40,6 +40,7 @@ func runServer() {
 	if err != nil {
 		panic(err)
 	}
+	defer listener.Close()
 
 	err = command.RunJobmanagerServer(
 		ctx,
