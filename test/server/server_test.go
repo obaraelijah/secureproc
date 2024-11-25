@@ -202,7 +202,9 @@ func runServer(
 	go func() {
 		runErr := command.RunJobmanagerServer(
 			ctx, listener, caCert, serverCert, serverKey)
-		assert.Nil(t, runErr)
+		if ruErr != nil {
+			t.Error()
+		}
 		wg.Done()
 	}()
 
